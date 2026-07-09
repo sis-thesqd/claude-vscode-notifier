@@ -43,6 +43,21 @@ finishes or when it's waiting on an answer from you.
 again — it re-copies the script and adds the new Notification hook without
 touching anything else in your settings.
 
+## Auto-update
+
+Once a day, the script quietly checks this repo and replaces **itself** with
+the latest version if one exists — so fixes and improvements reach you without
+reinstalling. Details, so there are no surprises:
+
+- It only ever updates the script file (`~/.claude/claude-done-notify.sh`).
+  It **never touches** `~/.claude/settings.json` or anything else.
+- The check runs in the background after a notification fires, so it never
+  slows anything down. No network? It just skips and tries another day.
+- To turn it off, put `CLAUDE_NOTIFY_AUTO_UPDATE=0` in `~/.claude/claude-notify.conf`.
+- Rare exception: if a future version changes the *hook wiring* itself (not
+  just the script), that still needs a one-time `git pull && ./install.sh`.
+  We'll say so in Slack if it ever happens.
+
 ## Not using VS Code?
 
 By default it stays quiet when **VS Code** is the app in front. If you use a
@@ -52,10 +67,15 @@ different editor, find its name by focusing it and running:
 lsappinfo info -only name "$(lsappinfo front)"
 ```
 
-Then open `~/.claude/claude-done-notify.sh` and change the `SKIP_APP` line near
-the top (for example `Cursor`, or `Code - Insiders`).
+Then create `~/.claude/claude-notify.conf` (plain shell) with the name you found:
 
-You can also change the sound or volume in that same file.
+```bash
+SKIP_APP="Cursor"
+```
+
+You can also set `SOUND_DONE`, `SOUND_WAITING`, or `VOLUME` in that same file.
+Don't edit `claude-done-notify.sh` itself — auto-update (below) would overwrite
+your changes; the `.conf` file survives updates.
 
 ## Turn it off
 
