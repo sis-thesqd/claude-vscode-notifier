@@ -1,11 +1,19 @@
-# Claude Code "done" notifier
+# Claude Code notifier
 
 A tiny helper for [Claude Code](https://claude.com/claude-code) on **macOS**.
 
-When Claude finishes working, it gives you a soft chime and a notification banner
-so you can go do something else and get pinged when it's ready. It stays **quiet
-while you're actually looking at your editor**, and only speaks up once you've
-tabbed away (Safari, another desktop, whatever).
+It gives you a soft chime and a notification banner in two situations:
+
+1. **Claude finished** — the turn is completely done.
+2. **Claude is waiting for you** — it needs a permission approval (pings right
+   away) or it asked you a question and has been sitting idle for about a
+   minute. Without this one, Claude can be silently stuck mid-task waiting on
+   an answer while you think it's still working.
+
+It stays **quiet while you're actually looking at your editor**, and only
+speaks up once you've tabbed away (Safari, another desktop, whatever). The two
+cases use different sounds (Tink = done, Glass = waiting) so you can tell them
+apart without looking.
 
 ## Requirements
 
@@ -28,7 +36,12 @@ Then two quick one-time steps the installer reminds you about:
    This makes the banner fade after a few seconds instead of sticking around.
    (macOS shows these notifications under the name "Script Editor.")
 
-That's it. Tab away from your editor and you'll get a soft ping when Claude finishes.
+That's it. Tab away from your editor and you'll get a soft ping when Claude
+finishes or when it's waiting on an answer from you.
+
+**Already installed an older version?** Just `git pull` and run `./install.sh`
+again — it re-copies the script and adds the new Notification hook without
+touching anything else in your settings.
 
 ## Not using VS Code?
 
@@ -46,8 +59,9 @@ You can also change the sound or volume in that same file.
 
 ## Turn it off
 
-Delete the `Stop` block from `~/.claude/settings.json`, or just delete
-`~/.claude/claude-done-notify.sh`.
+Delete the `Stop` and `Notification` blocks from `~/.claude/settings.json`, or
+just delete `~/.claude/claude-done-notify.sh`. To keep "done" pings but drop
+the "waiting" ones (or the reverse), delete only that one block.
 
 ## Good to know
 
