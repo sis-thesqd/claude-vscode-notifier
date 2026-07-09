@@ -2,11 +2,14 @@
 # One-shot installer for the Claude Code notifier.
 # Copies the script into ~/.claude and wires three hooks in ~/.claude/settings.json
 # (upgrading its own older entries, never touching anything else):
-#   Stop                            -> "Claude finished" ping
-#   PreToolUse (AskUserQuestion)    -> "Claude is waiting for you" ping, the moment
-#                                      a question dialog appears
-#   Notification (permission_prompt)-> same waiting ping when Claude needs a
-#                                      permission approval
+#   Stop                          -> "Claude finished" ping
+#   PreToolUse (AskUserQuestion)  -> "Claude is waiting for you" ping, the moment
+#                                    a question dialog appears
+#   PermissionRequest             -> same waiting ping, the moment a permission
+#                                    approval dialog appears (async, so it only
+#                                    notifies -- it never allows/denies for you)
+# Both waiting hooks are tool-events, which fire in the VS Code extension too
+# (the standalone Notification event does not -- anthropics/claude-code#59718).
 # macOS only.
 set -e
 
@@ -31,7 +34,7 @@ SCRIPT = "claude-done-notify.sh"
 canonical = [
     ("Stop", None, "bash ~/.claude/claude-done-notify.sh"),
     ("PreToolUse", "AskUserQuestion", "bash ~/.claude/claude-done-notify.sh waiting"),
-    ("Notification", "permission_prompt", "bash ~/.claude/claude-done-notify.sh waiting"),
+    ("PermissionRequest", None, "bash ~/.claude/claude-done-notify.sh waiting"),
 ]
 data = {}
 if os.path.exists(p):
@@ -43,18 +46,21 @@ if os.path.exists(p):
         print("   Add the hooks by hand (see the README).")
         sys.exit(1)
 hooks = data.setdefault("hooks", {})
-# Drop any hook groups of OURS (identified by the script name) so re-running
-# the installer upgrades old wiring cleanly. Everything else is left alone.
-for ev in {e for e, _, _ in canonical}:
-    groups = hooks.get(ev, [])
-    kept = [g for g in groups
+# Remove EVERY hook group that references our script, across all events, so
+# re-running upgrades old wiring cleanly and drops hooks we've since retired
+# (e.g. an old Notification entry). Anything not ours is left untouched.
+for ev in list(hooks.keys()):
+    kept = [g for g in hooks[ev]
             if not any(SCRIPT in h.get("command", "") for h in g.get("hooks", []))]
-    hooks[ev] = kept
+    if kept:
+        hooks[ev] = kept
+    else:
+        del hooks[ev]  # don't leave an empty event array behind
 for ev, matcher, cmd in canonical:
     group = {"hooks": [{"type": "command", "command": cmd, "async": True, "timeout": 10}]}
     if matcher:
         group["matcher"] = matcher
-    hooks[ev].append(group)
+    hooks.setdefault(ev, []).append(group)
     print("Wired %s%s." % (ev, " (%s)" % matcher if matcher else ""))
 with open(p, "w") as f:
     json.dump(data, f, indent=2)

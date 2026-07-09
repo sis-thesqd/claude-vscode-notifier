@@ -11,9 +11,9 @@ It gives you a soft chime and a notification banner in two situations:
    it's still working.
 
 It stays **quiet while you're actually looking at your editor**, and only
-speaks up once you've tabbed away (Safari, another desktop, whatever). The two
-cases use different sounds (Tink = done, Glass = waiting) so you can tell them
-apart without looking.
+speaks up once you've tabbed away (Safari, another desktop, whatever). Both use
+a soft Glass chime by default; if you'd rather tell "finished" from "waiting"
+by ear, set a different `SOUND_DONE` in your `.conf` (see below).
 
 ## Requirements
 
@@ -40,8 +40,8 @@ That's it. Tab away from your editor and you'll get a soft ping when Claude
 finishes or when it's waiting on an answer from you.
 
 **Already installed an older version?** Just `git pull` and run `./install.sh`
-again — it re-copies the script and adds the new Notification hook without
-touching anything else in your settings.
+again — it re-copies the script and re-wires the hooks (upgrading its own old
+entries in place) without touching anything else in your settings.
 
 ## Auto-update
 
@@ -79,7 +79,7 @@ your changes; the `.conf` file survives updates.
 
 ## Turn it off
 
-Delete the `Stop`, `PreToolUse`, and `Notification` blocks that reference
+Delete the `Stop`, `PreToolUse`, and `PermissionRequest` blocks that reference
 `claude-done-notify.sh` from `~/.claude/settings.json`, or just delete
 `~/.claude/claude-done-notify.sh`. To keep "done" pings but drop the "waiting"
 ones (or the reverse), delete only the blocks for the mode you don't want.
@@ -91,10 +91,13 @@ ones (or the reverse), delete only the blocks for the mode you don't want.
   runs where Claude Code runs. For those setups, the VS Code extension's built-in
   "done" dot on the Claude icon is your best bet.
 - It never steals focus and shows on whatever desktop/Space you're currently on.
-- Under the hood, "waiting" pings ride two hooks: `PreToolUse` on the
-  `AskUserQuestion` tool (question dialogs, instant) and `Notification` on
-  `permission_prompt` (approval dialogs). Known upstream gap: the VS Code
-  extension currently doesn't emit `Notification` events at all
-  ([anthropics/claude-code#59718](https://github.com/anthropics/claude-code/issues/59718)),
-  so the permission-approval ping may only fire in the terminal CLI until
-  that's fixed upstream. Question pings work in both.
+- Under the hood, "waiting" pings ride two tool-event hooks: `PreToolUse` on
+  the `AskUserQuestion` tool (question dialogs) and `PermissionRequest`
+  (approval dialogs). Both fire in the terminal **and** the VS Code extension.
+  We deliberately avoid the standalone `Notification` event, which the VS Code
+  extension doesn't emit at all
+  ([anthropics/claude-code#59718](https://github.com/anthropics/claude-code/issues/59718))
+  and which never fires for question dialogs
+  ([#59908](https://github.com/anthropics/claude-code/issues/59908)).
+- The `PermissionRequest` hook runs async, so it only *notifies* — it never
+  approves or denies anything on your behalf. You still make every call.

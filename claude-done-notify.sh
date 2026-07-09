@@ -2,12 +2,12 @@
 # Claude Code notifier.  https://github.com/sis-thesqd/claude-vscode-notifier
 # Two modes, picked by the first argument:
 #   (no arg)  -> "Claude finished"           (wired to the Stop hook)
-#   waiting   -> "Claude is waiting for you" (wired to PreToolUse/AskUserQuestion,
-#                which fires the moment a question dialog appears, and to
-#                Notification/permission_prompt for permission approvals.
-#                Note: the plain Notification event does NOT fire for question
-#                dialogs, and doesn't fire at all in the VS Code extension --
-#                that's why PreToolUse carries the question case.)
+#   waiting   -> "Claude is waiting for you" (wired to two tool-events:
+#                PreToolUse/AskUserQuestion fires the moment a question dialog
+#                appears, and PermissionRequest fires the moment a permission
+#                approval dialog appears. Both are tool-events, so they work in
+#                the VS Code extension -- unlike the standalone Notification
+#                event, which the extension drops: anthropics/claude-code#59718.)
 # Both play a soft chime and show a banner, but ONLY when your editor is NOT
 # the frontmost app -- so you get pinged when you've tabbed away and stay
 # undisturbed while you're watching it.
@@ -25,7 +25,9 @@
 SKIP_APP="${CLAUDE_NOTIFY_SKIP_APP:-Code}"
 
 # Sounds + volume (0.0 to 1.0). Swap the files for any .aiff in /System/Library/Sounds/.
-SOUND_DONE="${CLAUDE_NOTIFY_SOUND:-/System/Library/Sounds/Tink.aiff}"
+# Both default to Glass. Set SOUND_DONE to something else in your .conf if you'd
+# rather tell "finished" from "waiting" by ear.
+SOUND_DONE="${CLAUDE_NOTIFY_SOUND:-/System/Library/Sounds/Glass.aiff}"
 SOUND_WAITING="${CLAUDE_NOTIFY_SOUND_WAITING:-/System/Library/Sounds/Glass.aiff}"
 VOLUME="${CLAUDE_NOTIFY_VOLUME:-0.3}"
 
