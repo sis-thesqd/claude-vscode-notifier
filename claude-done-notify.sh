@@ -1,10 +1,13 @@
 #!/bin/bash
 # Claude Code notifier.  https://github.com/sis-thesqd/claude-vscode-notifier
 # Two modes, picked by the first argument:
-#   (no arg)  -> "Claude finished"           (wire to the Stop hook)
-#   waiting   -> "Claude is waiting for you" (wire to the Notification hook --
-#                fires when Claude needs a permission approval, and when it has
-#                been sitting on a question/idle input for ~60 seconds)
+#   (no arg)  -> "Claude finished"           (wired to the Stop hook)
+#   waiting   -> "Claude is waiting for you" (wired to PreToolUse/AskUserQuestion,
+#                which fires the moment a question dialog appears, and to
+#                Notification/permission_prompt for permission approvals.
+#                Note: the plain Notification event does NOT fire for question
+#                dialogs, and doesn't fire at all in the VS Code extension --
+#                that's why PreToolUse carries the question case.)
 # Both play a soft chime and show a banner, but ONLY when your editor is NOT
 # the frontmost app -- so you get pinged when you've tabbed away and stay
 # undisturbed while you're watching it.

@@ -5,10 +5,10 @@ A tiny helper for [Claude Code](https://claude.com/claude-code) on **macOS**.
 It gives you a soft chime and a notification banner in two situations:
 
 1. **Claude finished** — the turn is completely done.
-2. **Claude is waiting for you** — it needs a permission approval (pings right
-   away) or it asked you a question and has been sitting idle for about a
-   minute. Without this one, Claude can be silently stuck mid-task waiting on
-   an answer while you think it's still working.
+2. **Claude is waiting for you** — it asked you a question (pings the moment
+   the dialog appears) or it needs a permission approval. Without this one,
+   Claude can be silently stuck mid-task waiting on an answer while you think
+   it's still working.
 
 It stays **quiet while you're actually looking at your editor**, and only
 speaks up once you've tabbed away (Safari, another desktop, whatever). The two
@@ -79,9 +79,10 @@ your changes; the `.conf` file survives updates.
 
 ## Turn it off
 
-Delete the `Stop` and `Notification` blocks from `~/.claude/settings.json`, or
-just delete `~/.claude/claude-done-notify.sh`. To keep "done" pings but drop
-the "waiting" ones (or the reverse), delete only that one block.
+Delete the `Stop`, `PreToolUse`, and `Notification` blocks that reference
+`claude-done-notify.sh` from `~/.claude/settings.json`, or just delete
+`~/.claude/claude-done-notify.sh`. To keep "done" pings but drop the "waiting"
+ones (or the reverse), delete only the blocks for the mode you don't want.
 
 ## Good to know
 
@@ -90,3 +91,10 @@ the "waiting" ones (or the reverse), delete only that one block.
   runs where Claude Code runs. For those setups, the VS Code extension's built-in
   "done" dot on the Claude icon is your best bet.
 - It never steals focus and shows on whatever desktop/Space you're currently on.
+- Under the hood, "waiting" pings ride two hooks: `PreToolUse` on the
+  `AskUserQuestion` tool (question dialogs, instant) and `Notification` on
+  `permission_prompt` (approval dialogs). Known upstream gap: the VS Code
+  extension currently doesn't emit `Notification` events at all
+  ([anthropics/claude-code#59718](https://github.com/anthropics/claude-code/issues/59718)),
+  so the permission-approval ping may only fire in the terminal CLI until
+  that's fixed upstream. Question pings work in both.
