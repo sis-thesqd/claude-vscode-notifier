@@ -15,11 +15,18 @@ speaks up once you've tabbed away (Safari, another desktop, whatever). Both use
 a soft Glass chime by default; if you'd rather tell "finished" from "waiting"
 by ear, set a different `SOUND_DONE` in your `.conf` (see below).
 
+Install the optional `terminal-notifier` (below) and **clicking the banner jumps
+you straight back to your editor**.
+
 ## Requirements
 
 - macOS
 - Claude Code (terminal or the VS Code extension)
-- Nothing else. It uses built-in macOS tools only.
+- Nothing required to install. It uses built-in macOS tools by default.
+- *Optional:* [`terminal-notifier`](https://github.com/julienXX/terminal-notifier)
+  (`brew install terminal-notifier`) if you want **clicking the banner to bring
+  your editor back to the front** (see "Click the banner" below). Without it,
+  everything still works, the banner just isn't clickable.
 
 ## Install
 
@@ -32,9 +39,12 @@ cd claude-vscode-notifier
 Then two quick one-time steps the installer reminds you about:
 
 1. In Claude Code, run `/hooks` once (or restart it) so the new hook loads.
-2. **System Settings → Notifications → Script Editor → Alert style: Banners.**
-   This makes the banner fade after a few seconds instead of sticking around.
-   (macOS shows these notifications under the name "Script Editor.")
+2. Make the banner fade on its own instead of sticking around:
+   **System Settings → Notifications → _[app]_ → Alert style: Banners.**
+   The _[app]_ is **"terminal-notifier"** if you installed it (see "Click the
+   banner" below), otherwise **"Script Editor"** (the name macOS shows these
+   under). If it isn't in the list yet, trigger one notification first so macOS
+   registers it.
 
 That's it. Tab away from your editor and you'll get a soft ping when Claude
 finishes or when it's waiting on an answer from you.
@@ -76,6 +86,28 @@ SKIP_APP="Cursor"
 You can also set `SOUND_DONE`, `SOUND_WAITING`, or `VOLUME` in that same file.
 Don't edit `claude-done-notify.sh` itself — auto-update (below) would overwrite
 your changes; the `.conf` file survives updates.
+
+## Click the banner to open your editor
+
+Install [`terminal-notifier`](https://github.com/julienXX/terminal-notifier):
+
+```bash
+brew install terminal-notifier
+```
+
+Once it's there the notifier uses it automatically, and **clicking the banner
+brings your editor to the front** (whatever `SKIP_APP` is set to). Two one-time
+notes:
+
+- The banner now shows under the name **"terminal-notifier"**, so grant it
+  notification permission if macOS asks, and set its Alert style to **Banners**
+  (System Settings → Notifications → terminal-notifier).
+- It figures out which app to open from your `SKIP_APP` name. If that lookup
+  ever fails, set the bundle id yourself in `~/.claude/claude-notify.conf`:
+  `CLAUDE_NOTIFY_CLICK_BUNDLE_ID="com.microsoft.VSCode"` (find any app's id with
+  `osascript -e 'id of app "Code"'`).
+
+No terminal-notifier? Nothing breaks, the banner just isn't clickable.
 
 ## Turn it off
 

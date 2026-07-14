@@ -16,7 +16,11 @@
 # settings) from the repo above, so fixes reach you without reinstalling.
 # Set CLAUDE_NOTIFY_AUTO_UPDATE=0 to turn that off.
 #
-# Uses macOS built-ins only (osascript + afplay + lsappinfo + curl). No extra installs.
+# Uses macOS built-ins (osascript + afplay + lsappinfo + curl). If terminal-notifier
+# is installed, it's used for the banner instead of osascript so that CLICKING the
+# banner brings your editor ($SKIP_APP) back to the front. Without terminal-notifier
+# everything still works, clicking the banner just opens Script Editor. No installs
+# are required either way (terminal-notifier is optional: brew install terminal-notifier).
 
 # --- change this if your editor isn't VS Code ---
 # Frontmost app name to stay quiet for. Find yours by focusing your editor and running:
@@ -61,12 +65,36 @@ self_update() {
 front=$(lsappinfo info -only name "$(lsappinfo front)" 2>/dev/null | awk -F'"' '{print $4}')
 if [ "$front" != "$SKIP_APP" ]; then
   if [ "$1" = "waiting" ]; then
-    osascript -e 'display notification "Claude is waiting for you (question or approval)" with title "Claude Code"'
-    [ -f "$SOUND_WAITING" ] && afplay -v "$VOLUME" "$SOUND_WAITING"
+    MSG="Claude is waiting for you (question or approval)"
+    SOUND="$SOUND_WAITING"
   else
-    osascript -e 'display notification "Claude finished" with title "Claude Code"'
-    [ -f "$SOUND_DONE" ] && afplay -v "$VOLUME" "$SOUND_DONE"
+    MSG="Claude finished"
+    SOUND="$SOUND_DONE"
   fi
+
+  # Find terminal-notifier even when the hook runs with a minimal PATH
+  # (Apple Silicon Homebrew: /opt/homebrew/bin, Intel: /usr/local/bin).
+  TN="$(command -v terminal-notifier 2>/dev/null)"
+  [ -z "$TN" ] && [ -x /opt/homebrew/bin/terminal-notifier ] && TN=/opt/homebrew/bin/terminal-notifier
+  [ -z "$TN" ] && [ -x /usr/local/bin/terminal-notifier ] && TN=/usr/local/bin/terminal-notifier
+
+  if [ -n "$TN" ]; then
+    # Clicking the banner brings your editor to the front. terminal-notifier's
+    # -activate takes a BUNDLE ID, so resolve it from $SKIP_APP (override in the
+    # .conf via CLAUDE_NOTIFY_CLICK_BUNDLE_ID if the name lookup ever fails).
+    # Silent here (no -sound) so afplay keeps control of the volume.
+    BID="${CLAUDE_NOTIFY_CLICK_BUNDLE_ID:-$(osascript -e "id of app \"$SKIP_APP\"" 2>/dev/null)}"
+    if [ -n "$BID" ]; then
+      "$TN" -title "Claude Code" -message "$MSG" -activate "$BID" >/dev/null 2>&1
+    else
+      "$TN" -title "Claude Code" -message "$MSG" >/dev/null 2>&1
+    fi
+  else
+    # Fallback: same banner, but clicking it just opens Script Editor.
+    osascript -e "display notification \"$MSG\" with title \"Claude Code\""
+  fi
+
+  [ -f "$SOUND" ] && afplay -v "$VOLUME" "$SOUND"
 fi
 
 # Update check runs last, in the background, so it never delays the ping.
